@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGC — Núcleo SCP Castelo Branco</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="crest">NCB</div>
+      <div class="name">SGC<small>Núcleo SCP Castelo Branco</small></div>
+    </div>
+
+    <div class="nav-item active" data-view="escaloes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 21h16"/><path d="M9 8h6M9 12h6"/></svg>
+      Escalões
+    </div>
+    <div class="nav-item" data-view="jogadoras">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      Jogadoras
+    </div>
+    <div class="nav-item" data-view="tarefas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
+      Tarefas
+    </div>
+
+    <div class="sidebar-footer">SGC — gestão interna do núcleo</div>
+  </aside>
+
+  <main class="main">
+
+    <div id="configBanner" class="config-banner">
+      Ainda não ligaste o Supabase. Edita <code>js/config.js</code> e coloca o URL e a chave anon
+      do teu projeto (Supabase → Project Settings → API), e corre o script <code>sql/schema.sql</code>
+      no SQL Editor para criar as tabelas.
+    </div>
+
+    <!-- ESCALÕES -->
+    <section id="view-escaloes" class="view active">
+      <div class="page-header">
+        <div>
+          <h1>Escalões</h1>
+          <div class="subtitle">Clica num escalão para veres as jogadoras dele</div>
+        </div>
+      </div>
+      <div class="grid" id="escaloesGrid"></div>
+    </section>
+
+    <!-- JOGADORAS -->
+    <section id="view-jogadoras" class="view">
+      <div class="page-header">
+        <div>
+          <h1>Jogadoras</h1>
+          <div class="subtitle">Todas as jogadoras do clube, por escalão</div>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalJogadora(null)">+ Nova jogadora</button>
+      </div>
+      <div class="toolbar">
+        <select id="filtroEscalao" class="select"><option value="todos">Todos os escalões</option></select>
+      </div>
+      <div class="players-grid" id="jogadorasGrid"></div>
+    </section>
+
+    <!-- TAREFAS -->
+    <section id="view-tarefas" class="view">
+      <div class="page-header">
+        <div>
+          <h1>Tarefas</h1>
+          <div class="subtitle">Organização do trabalho do núcleo</div>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalTarefa(null)">+ Nova tarefa</button>
+      </div>
+      <div class="kanban">
+        <div class="kanban-col">
+          <h3>Por Fazer <span class="n" id="count-por-fazer">0</span></h3>
+          <div id="col-por-fazer"></div>
+        </div>
+        <div class="kanban-col">
+          <h3>A Fazer <span class="n" id="count-a-fazer">0</span></h3>
+          <div id="col-a-fazer"></div>
+        </div>
+        <div class="kanban-col">
+          <h3>Feito <span class="n" id="count-feito">0</span></h3>
+          <div id="col-feito"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= MODAL ESCALÃO ================= -->
+<div class="overlay" id="overlayEscalao">
+  <div class="modal">
+    <h2 id="escalaoModalTitle">Novo escalão</h2>
+    <form id="formEscalao">
+      <div class="field">
+        <label>Nome do escalão</label>
+        <input class="input" id="escalaoNome" placeholder="Ex: Sub-15" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Idade mínima</label>
+          <input class="input" id="escalaoIdadeMin" type="number" min="0" required>
+        </div>
+        <div class="field">
+          <label>Idade máxima (opcional)</label>
+          <input class="input" id="escalaoIdadeMax" type="number" min="0">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="escalaoDeleteBtn" onclick="eliminarEscalao(editEscalaoId); fecharModal('overlayEscalao')">Eliminar</button>
+        <div style="display:flex; gap:10px; margin-left:auto;">
+          <button type="button" class="btn btn-ghost" onclick="fecharModal('overlayEscalao')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MODAL JOGADORA ================= -->
+<div class="overlay" id="overlayJogadora">
+  <div class="modal">
+    <h2 id="jogadoraModalTitle">Nova jogadora</h2>
+    <form id="formJogadora">
+      <div class="photo-upload">
+        <div class="photo-preview" id="fotoPreview">📷</div>
+        <div>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+            Escolher foto
+            <input type="file" id="jogadoraFotoInput" accept="image/*" style="display:none;">
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome completo</label>
+        <input class="input" id="jogadoraNomeCompleto" required>
+      </div>
+      <div class="field">
+        <label>Nome curto</label>
+        <input class="input" id="jogadoraNomeCurto" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Data de nascimento</label>
+          <input class="input" id="jogadoraDataNasc" type="date" required>
+        </div>
+        <div class="field">
+          <label>Nacionalidade</label>
+          <input class="input" id="jogadoraNacionalidade" required>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Posição</label>
+          <select class="select" id="jogadoraPosicao"></select>
+        </div>
+        <div class="field">
+          <label>Escalão</label>
+          <select class="select" id="jogadoraEscalao"></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="jogadoraDeleteBtn" onclick="eliminarJogadora()">Eliminar</button>
+        <div style="display:flex; gap:10px; margin-left:auto;">
+          <button type="button" class="btn btn-ghost" onclick="fecharModal('overlayJogadora')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MODAL TAREFA ================= -->
+<div class="overlay" id="overlayTarefa">
+  <div class="modal">
+    <h2 id="tarefaModalTitle">Nova tarefa</h2>
+    <form id="formTarefa">
+      <div class="field">
+        <label>Título</label>
+        <input class="input" id="tarefaTitulo" required>
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea class="input" id="tarefaDescricao" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" id="tarefaEstado"></select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="tarefaDeleteBtn" onclick="eliminarTarefa()">Eliminar</button>
+        <div style="display:flex; gap:10px; margin-left:auto;">
+          <button type="button" class="btn btn-ghost" onclick="fecharModal('overlayTarefa')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
