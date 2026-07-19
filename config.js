@@ -3,5 +3,5 @@
 // Substitui os valores abaixo pelos do teu projeto:
 // Supabase > Project Settings > API
 // =========================================================
-const SUPABASE_URL = 'COLA_AQUI_O_TEU_PROJECT_URL';
-const SUPABASE_ANON_KEY = 'COLA_AQUI_A_TUA_ANON_KEY';
+const SUPABASE_URL = 'https://lwehgnistggtekqbshur.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppcWlrc25qZW95Y3JnemZjdGlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0ODQ0MTQsImV4cCI6MjEwMDA2MDQxNH0.V6H49fDZY5bR2eBBX66IeAMJCYfOC57HH2JDHKSe0PQ';
